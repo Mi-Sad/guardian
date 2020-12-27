@@ -8,4 +8,7 @@
     <StartAction>Program</StartAction>
     <StartProgram>C:\Users\summer\Desktop\Dev\GuardianAoT\AoTTG\Guardian.exe</StartProgram>
   </PropertyGroup>
+  <PropertyGroup>
+    <ProjectView>ShowAllFiles</ProjectView>
+  </PropertyGroup>
 </Project>

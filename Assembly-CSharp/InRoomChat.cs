@@ -6,6 +6,20 @@ using UnityEngine;
 public class InRoomChat : Photon.MonoBehaviour
 {
     public static InRoomChat Instance;
+    public static bool useScroll;
+    public static bool _useBg = true;
+    public static bool useBg 
+    {
+        get { return _useBg; }
+        set
+        {
+            if (value!=_useBg && Instance != null)
+            {
+                Instance.boxStyle = null;
+            }
+            _useBg = value;
+        }
+    }
     public static Rect MessagesRect = new Rect(1f, 0f, 329f, 225f);
     public static Rect ChatBoxRect = new Rect(30f, 575f, 300f, 25f);
     public bool IsVisible = true;
@@ -13,10 +27,13 @@ public class InRoomChat : Photon.MonoBehaviour
     public static List<Message> Messages = new List<Message>();
     public string inputLine = string.Empty;
     private Vector2 ScrollPosition = GameHelper.ScrollBottom;
+    private Vector2 ForcedScroll = GameHelper.ScrollBottom;
     private string TextFieldName = "ChatInput";
     private GUIStyle boxStyle;
     private GUIStyle labelStyle;
     private GUIStyle textboxStyle;
+
+    private float scroll_size;
 
     void Awake()
     {
@@ -32,7 +49,7 @@ public class InRoomChat : Photon.MonoBehaviour
     {
         if (AlignBottom)
         {
-            ScrollPosition = GameHelper.ScrollBottom;
+            ForcedScroll = ScrollPosition = GameHelper.ScrollBottom;
             MessagesRect = new Rect(1f, Screen.height - 255f, 329f, 225f);
             ChatBoxRect = new Rect(30f, Screen.height - 25f, 300f, 25f);
         }
@@ -55,7 +72,7 @@ public class InRoomChat : Photon.MonoBehaviour
                 Messages.RemoveAt(0);
             }
             Messages.Add(new Message(sender, text));
-            ScrollPosition = GameHelper.ScrollBottom;
+            ForcedScroll = ScrollPosition = GameHelper.ScrollBottom;
         }
     }
 
@@ -69,55 +86,85 @@ public class InRoomChat : Photon.MonoBehaviour
         // Chat messages
         if (boxStyle == null)
         {
+            var alphaValue = useBg ? .6f : 0f;
             boxStyle = new GUIStyle(GUI.skin.box);
             Texture2D flat = new Texture2D(1, 1);
-            flat.SetPixel(0, 0, new Color(0.125f, 0.125f, 0.125f, 0.6f));
+            flat.SetPixel(0, 0, new Color(0.125f, 0.125f, 0.125f, alphaValue));
             flat.Apply();
             boxStyle.normal.background = flat;
         }
 
         GUI.SetNextControlName(string.Empty);
         GUILayout.BeginArea(MessagesRect, boxStyle);
-        GUILayout.FlexibleSpace();
-
-        ScrollPosition = GUILayout.BeginScrollView(ScrollPosition);
-
-        if (labelStyle == null)
+        GUILayout.BeginHorizontal();
+        var isUsingScroll = useScroll && scroll_size > MessagesRect.height - (boxStyle.contentOffset.y * 2);
+        if (isUsingScroll)
         {
-            labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                margin = new RectOffset(0, 0, 0, 0),
-                padding = new RectOffset(0, 0, 0, 0),
-                border = new RectOffset(0, 0, 0, 0)
-            };
+            ForcedScroll = GUILayout.BeginScrollView(ScrollPosition, GUIStyle.none, GUI.skin.verticalScrollbar, GUILayout.Width(12));
+            GUILayout.Space(scroll_size);
+            GUILayout.EndScrollView();
+
+            if (Event.current.type == EventType.Repaint)
+                scroll_size = 0;
+
+            GUILayout.Space(5);
         }
-
-        foreach (Message message in Messages)
+        GUILayout.BeginVertical();
         {
-            try
+            GUILayout.FlexibleSpace();
+
+            var newPos = GUILayout.BeginScrollView(ScrollPosition, GUIStyle.none, GUIStyle.none);
+
+            if(isUsingScroll && ForcedScroll != ScrollPosition)
+                ScrollPosition = ForcedScroll;
+            else
+                ScrollPosition = newPos;
+
+            if (labelStyle == null)
             {
-                GUILayout.Label(message.ToString(), labelStyle);
-                if (GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition)
-                    && Event.current.type != EventType.Repaint
-                    && GUI.GetNameOfFocusedControl().Equals(TextFieldName))
+                labelStyle = new GUIStyle(GUI.skin.label)
                 {
-                    if (Input.GetMouseButtonDown(0)) // Mouse1/Left Click
+                    margin = new RectOffset(0, 0, 0, 0),
+                    padding = new RectOffset(0, 0, 0, 0),
+                    border = new RectOffset(0, 0, 0, 0)
+                };
+            }
+
+
+            foreach (Message message in Messages)
+            {
+                try
+                {
+                    GUILayout.Label(message.ToString(), labelStyle);
+                    var last_rect = GUILayoutUtility.GetLastRect();
+                    if (Event.current.type == EventType.Repaint)
                     {
-                        Mod.Commands.Find("translate").Execute(this, message.Content.Split(' '));
+                        if(useScroll)
+                            scroll_size += last_rect.height;
                     }
-                    else if (Input.GetMouseButtonDown(1)) // Mouse2/Right Click
+                    else if (last_rect.Contains(Event.current.mousePosition) && GUI.GetNameOfFocusedControl().Equals(TextFieldName))
                     {
-                        TextEditor te = new TextEditor();
-                        te.content = new GUIContent(message.Content);
-                        te.SelectAll();
-                        te.Copy();
+                        if (Input.GetMouseButtonDown(0)) // Mouse1/Left Click
+                        {
+                            Mod.Commands.Find("translate").Execute(this, message.Content.Split(' '));
+                        }
+                        else if (Input.GetMouseButtonDown(1)) // Mouse2/Right Click
+                        {
+                            TextEditor te = new TextEditor();
+                            te.content = new GUIContent(message.Content);
+                            te.SelectAll();
+                            te.Copy();
+                        }
+
                     }
                 }
+                catch { }
             }
-            catch { }
-        }
 
-        GUILayout.EndScrollView();
+            GUILayout.EndScrollView();
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndHorizontal();
         GUILayout.EndArea();
 
         // Sends chat messages

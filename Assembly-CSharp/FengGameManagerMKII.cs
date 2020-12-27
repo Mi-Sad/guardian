@@ -9218,8 +9218,13 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
                             GUI.Label(new Rect(num7 + 72f, num8 + 184f, 227f, 20f), "FPS Cap (0 for disabled):", "Label");
                             GUI.Label(new Rect(num7 + 72f, num8 + 212f, 150f, 22f), "Texture Quality:", "Label");
                             GUI.Label(new Rect(num7 + 72f, num8 + 242f, 150f, 22f), "Overall Quality:", "Label");
-                            GUI.Label(new Rect(num7 + 72f, num8 + 272f, 185f, 22f), "Disable Mipmapping:", "Label");
-                            GUI.Label(new Rect(num7 + 72f, num8 + 297f, 185f, 65f), "*Disabling mipmapping will increase custom texture quality at the cost of performance.", "Label");
+                            GUI.Label(new Rect(num7 + 72f, num8 + 272f, 185f, 22f), "Chat Scroll", "Label");
+                            InRoomChat.useScroll = GUI.Toggle(new Rect(num7 + 274f, num8 + 272f, 40f, 20f), InRoomChat.useScroll, "On");
+                            GUI.Label(new Rect(num7 + 72f, num8 + 272f+30, 185f, 22f), "Chat Background", "Label");
+                            InRoomChat.useBg = GUI.Toggle(new Rect(num7 + 274f, num8 + 272+30f, 40f, 20f), InRoomChat.useBg, "On");
+
+                            GUI.Label(new Rect(num7 + 72f, num8 + 272f + 60, 185f, 22f), "Disable Mipmapping:", "Label");
+                            GUI.Label(new Rect(num7 + 72f, num8 + 297f + 60, 185f, 65f), "*Disabling mipmapping will increase custom texture quality at the cost of performance.", "Label");
                             qualitySlider = GUI.HorizontalSlider(new Rect(num7 + 199f, num8 + 247f, 115f, 20f), qualitySlider, 0f, 1f);
                             PlayerPrefs.SetFloat("GameQuality", qualitySlider);
                             if (qualitySlider < 0.167f)
@@ -9330,7 +9335,7 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
                                 }
                                 Minimap.WaitAndTryRecaptureInstance(0.5f);
                             }
-                            bool flag21 = GUI.Toggle(new Rect(num7 + 274f, num8 + 272f, 40f, 20f), flag16, "On");
+                            bool flag21 = GUI.Toggle(new Rect(num7 + 274f, num8 + 272f + 60, 40f, 20f), flag16, "On");
                             if (flag21 != flag16)
                             {
                                 if (flag21)
